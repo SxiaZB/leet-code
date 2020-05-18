@@ -1,9 +1,226 @@
 package com.leet;
 
+import java.awt.*;
 import java.util.*;
+import java.util.List;
 import java.util.function.IntConsumer;
 
 public class LeetCode {
+
+    /**
+     * @link: https://www.lintcode.com/problem/number-of-islands-ii/description
+     */
+    static class Solution434 {
+        private int n, m;
+
+        public List<Integer> numIslands2(int n, int m, Point[] operators) {
+            List<Integer> res = new ArrayList<>();
+            if (operators == null || operators.length == 0) {
+                return res;
+            }
+            int[][] grid = new int[n][m];
+
+            this.n = n;
+            this.m = m;
+            for (int i = 0; i < operators.length; i++) {
+                Point operator = operators[i];
+                if (operator.x < 0 || operator.x >= n || operator.y < 0 || operator.y >= m) {
+                    //无效点击
+                    res.add(i == 0 ? 0 : res.get(i - 1));
+                    continue;
+                }
+                grid[operator.x][operator.y] = 1;
+                res.add(numIslands(grid));
+            }
+            return res;
+        }
+
+        public int numIslands(int[][] grid) {
+            int res = 0;
+            boolean[][] click = new boolean[n][m];
+            for (int i = 0; i < n; i++) {
+                for (int j = 0; j < m; j++) {
+                    if (grid[i][j] == 1 && !click[i][j]) {
+                        res++;
+                        dfs(grid, click, i, j);
+                    }
+                }
+            }
+
+            return res;
+        }
+
+        private void dfs(int[][] grid, boolean[][] click, int r, int c) {
+            if (r < 0 || c < 0 || r >= n || c >= m || click[r][c] || grid[r][c] == 0) {
+                return;
+            }
+
+            click[r][c] = true;
+            dfs(grid, click, r - 1, c);
+            dfs(grid, click, r + 1, c);
+            dfs(grid, click, r, c - 1);
+            dfs(grid, click, r, c + 1);
+        }
+    }
+
+    static class Solution434T2 {
+        //(x,y)点的id=y*m+x,记录每个位置的root id
+        private int[] islands;
+
+        private int root(int island) {
+            while (islands[island] != island) {
+                islands[island] = islands[islands[island]];
+                island = islands[island];
+            }
+            return island;
+        }
+
+        private int[][] directions = {{-1, 0}, {0, 1}, {1, 0}, {0, -1}};
+
+        public List<Integer> numIslands2(int m, int n, Point[] operators) {
+            List<Integer> res = new ArrayList<>();
+            if (operators == null || operators.length == 0) {
+                return res;
+            }
+
+            islands = new int[m * n];
+            Arrays.fill(islands, -1);
+            int island = 0;
+            for (int i = 0; i < operators.length; i++) {
+                Point operator = operators[i];
+                int id = operator.y * m + operator.x;
+                if (islands[id] != id) {
+                    islands[id] = id;
+                    island++;
+                    for (int j = 0; j < 4; j++) {
+                        int nx = operator.x + directions[j][0];
+                        int ny = operator.y + directions[j][1];
+                        int nid = ny * m + nx;
+                        if (ny >= 0 && ny < n && nx >= 0 && nx < m && islands[nid] != -1) {
+                            int root = root(nid);
+                            if (root != id) {
+                                islands[root] = id;
+                                island--;
+                            }
+                        }
+                    }
+                }
+                res.add(island);
+            }
+            return res;
+        }
+    }
+
+    static class Solution1391 {
+        // 上右下左
+        private int[][] directions = {{-1, 0}, {0, 1}, {1, 0}, {0, -1}};
+        //0：上 1：右 2：下 3：左
+        private int[][] streets = {
+                {1, 3}, {0, 2},
+                {2, 3}, {1, 2},
+                {0, 3}, {0, 1}};
+        private int[][] grid;
+        private int m, n;
+
+        public boolean hasValidPath(int[][] grid) {
+            this.grid = grid;
+            this.m = grid.length;
+            this.n = grid[0].length;
+            int[] street = streets[grid[0][0] - 1];
+            for (int st = 0; st < street.length; st++) {
+                int direction = street[st];
+                if (go(0, 0, direction)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        private boolean go(int x, int y, int direction) {
+            //走到终点🏁
+            if (x == m - 1 && y == n - 1) {
+                return true;
+            }
+            x = x + directions[direction][0];
+            y = y + directions[direction][1];
+            //越界或者曾经来过就失败
+            if (x < 0 || y < 0 || x >= m || y >= n || (grid[x][y] == -1)) {
+                return false;
+            }
+            //下一个街道
+            int street = grid[x][y];
+            //需要的入口
+            int entrance = (direction + 2) % 4;
+            //从新街道找到入口，得到新的方向
+            if (entrance == streets[street - 1][0]) {
+                direction = streets[street - 1][1];
+            } else if (entrance == streets[street - 1][1]) {
+                direction = streets[street - 1][0];
+            } else {
+                //新街道没有入口
+                return false;
+            }
+            //走过这个点
+            grid[x][y] = -1;
+            return go(x, y, direction);
+        }
+    }
+
+//    static class Solution1391T2 {
+//        // 上右下左
+//        private int[][] directions = {{-1, 0}, {0, 1}, {1, 0}, {0, -1}};
+//        //0：上 1：右 2：下 3：左
+//        private int[][] streets = {
+//                {1, 3}, {0, 2},
+//                {2, 3}, {1, 2},
+//                {0, 3}, {0, 1}};
+//
+//        //(x,y)点的id=y*m+x,记录每个位置的root id
+//        private int[] isJoin;
+//
+//        private int root(int id) {
+//            while (isJoin[id] != id) {
+//                isJoin[id] = isJoin[isJoin[id]];
+//                id = isJoin[id];
+//            }
+//            return id;
+//        }
+//
+//        public boolean hasValidPath(int[][] grid) {
+//            int m = grid.length;
+//            int n = grid[0].length;
+//            isJoin = new int[m * 300 + n + 1];
+//            Arrays.fill(isJoin, -1);
+//            for (int i = 0; i < m; i++) {
+//                for (int j = 0; j < n; j++) {
+//                    int id = i * 300 + j;
+//                    if (isJoin[id] == -1) {
+//                        isJoin[id] = id;
+//                    }
+//                    int[] street = streets[grid[i][j] - 1];
+//                    for (int st = 0; st < street.length; st++) {
+//                        int ni = i + directions[street[st]][0];
+//                        int nj = j + directions[street[st]][1];
+//                        if (ni < 0 || nj < 0 || ni >= m || nj >= n) {
+//                            continue;
+//                        }
+//                        int nid = ni * 300 + nj;
+//                        if (isJoin[nid] == -1) {
+//                            isJoin[nid] = isJoin[id];
+//                        } else {
+//                            root(nid);
+//                        }
+//                    }
+//                }
+//            }
+//            return isJoin[m * n - 1] == 0;
+//        }
+//
+//        public static void main(String[] args) {
+//            Solution1391T2 solution1391T2 = new Solution1391T2();
+//            solution1391T2.hasValidPath(new int[][]{{2,4,3},{6,5,2}});
+//        }
+//    }
 
     /**
      * @link: https://leetcode-cn.com/problems/design-hashmap/
@@ -114,8 +331,7 @@ public class LeetCode {
          */
         /**
          * @code：go
-         * @author：邢剑宽
-         * import "math/rand"
+         * @author：邢剑宽 import "math/rand"
          * <p>
          * type Node struct {
          * Nexts  []*Node
@@ -1130,23 +1346,24 @@ public class LeetCode {
 
         public boolean isValidBST(TreeNode root) {
             List<Integer> list = new ArrayList<>();
-            inOrderTraversal(root,list);
+            inOrderTraversal(root, list);
             int n = list.size();
-            for(int i = 0;i<n-1;i++){
-                if(list.get(i)>=list.get(i+1)){
+            for (int i = 0; i < n - 1; i++) {
+                if (list.get(i) >= list.get(i + 1)) {
                     return false;
                 }
             }
             return true;
         }
+
         //利用二叉搜索树的中序遍历是从小到大的顺序，左>中>右，递归到左节点的最末端，将左节点添加到list后，再添加本身，再遍历右节点
-        public void inOrderTraversal(TreeNode node,List<Integer> list){
-            if(node==null){
+        public void inOrderTraversal(TreeNode node, List<Integer> list) {
+            if (node == null) {
                 return;
             }
-            inOrderTraversal(node.left,list);
+            inOrderTraversal(node.left, list);
             list.add(node.val);
-            inOrderTraversal(node.right,list);
+            inOrderTraversal(node.right, list);
         }
 
     }
@@ -1328,19 +1545,19 @@ public class LeetCode {
                 node = node.next;
             }
             c = head;
-            return helper(0,length-1);
+            return helper(0, length - 1);
         }
 
-        private TreeNode helper(int s,int e) {
-            if (s>e){
+        private TreeNode helper(int s, int e) {
+            if (s > e) {
                 return null;
             }
-            int m = s+((e-s+1)>>1);
-            TreeNode left = helper(s,m-1);
+            int m = s + ((e - s + 1) >> 1);
+            TreeNode left = helper(s, m - 1);
             TreeNode node = new TreeNode(c.val);
             node.left = left;
             c = c.next;
-            node.right = helper(m+1,e);
+            node.right = helper(m + 1, e);
             return node;
         }
 
@@ -1423,7 +1640,7 @@ public class LeetCode {
         public ListNode mergeKLists(ListNode[] lists) {
             ListNode res = null;
             for (int i = 0; i < lists.length; i++) {
-                res = mergeTwoLists(res,lists[i]);
+                res = mergeTwoLists(res, lists[i]);
             }
             return res;
         }
@@ -1909,6 +2126,25 @@ public class LeetCode {
             dfs(grid, r, c + 1);
         }
 
+        public int numIslands(char[][] grid) {
+            if (grid == null || grid.length == 0) {
+                return 0;
+            }
+            int n = grid.length;
+            int m = grid[0].length;
+            int res = 0;
+            for (int i = 0; i < n; i++) {
+                for (int j = 0; j < m; j++) {
+                    if (grid[i][j] == '1') {
+                        res++;
+                        dfs(grid, i, j);
+                    }
+                }
+            }
+
+            return res;
+        }
+
         public int numIslands1(char[][] grid) {
             if (grid == null || grid.length == 0) {
                 return 0;
@@ -1942,25 +2178,6 @@ public class LeetCode {
                                 grid[now[0]][now[1] + 1] = '0';
                             }
                         }
-                    }
-                }
-            }
-
-            return res;
-        }
-
-        public int numIslands(char[][] grid) {
-            if (grid == null || grid.length == 0) {
-                return 0;
-            }
-            int n = grid.length;
-            int m = grid[0].length;
-            int res = 0;
-            for (int i = 0; i < n; i++) {
-                for (int j = 0; j < m; j++) {
-                    if (grid[i][j] == '1') {
-                        res++;
-                        dfs(grid, i, j);
                     }
                 }
             }
