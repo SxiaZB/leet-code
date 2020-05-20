@@ -8,6 +8,94 @@ import java.util.function.IntConsumer;
 public class LeetCode {
 
     /**
+     * @link: https://leetcode-cn.com/problems/implement-strstr/
+     */
+    static class Solution28 {
+        public int strStr(String haystack, String needle) {
+            if (needle == null || "".equals(needle)) {
+                return 0;
+            }
+            int m = needle.length();
+            int n = haystack.length();
+            Map<Character, Integer> bmBc = new HashMap<>();
+            int[] bmGs = new int[m];
+            preBmBc(needle, m, bmBc);
+            preBmGs(needle, m, bmGs);
+            int i = 0;
+            int j = 0;
+            while (j <= n - m) {
+                for (i = m - 1; i >= 0; i--) {
+                    if (needle.charAt(i) != haystack.charAt(i + j)) {
+                        break;
+                    }
+                }
+                if (i < 0) {
+                    return j;
+                } else {
+                    j += Math.max(bmGs[i], getBmBc(haystack.charAt(i + j), bmBc, m) - (m - 1 - i));
+                }
+            }
+            return -1;
+        }
+
+        private void preBmBc(String pattern, int patLength, Map<Character, Integer> bmBc) {
+            for (int i = patLength - 2; i >= 0; i--) {
+                if (!bmBc.containsKey(pattern.charAt(i))) {
+                    // 存入从右往左某个字符第一次出现距离尾部的距离
+                    bmBc.put(pattern.charAt(i), patLength - 1 - i);
+                }
+            }
+        }
+
+        private int getBmBc(char c, Map<Character, Integer> bmBc, int m) {
+            //取坏字符算法得到的位移，存在则返回位移
+            if (bmBc.containsKey(c)) {
+                return bmBc.get(c);
+            } else {
+                return m;
+            }
+        }
+
+        private void suffix(String pattern, int patLength, int[] suffix) {
+            //suffix[i] = s 表示以i为边界，与模式串后缀匹配的最大长度
+            suffix[patLength - 1] = patLength;
+            int q = 0;
+            for (int i = patLength - 2; i >= 0; i--) {
+                q = i;
+                while (q >= 0 && pattern.charAt(q) == pattern.charAt(patLength - 1 - (i - q))) {
+                    q--;
+                }
+                suffix[i] = i - q;
+            }
+        }
+
+        private void preBmGs(String pattern, int patLength, int[] bmGs) {
+            int i, j;
+            int[] suffix = new int[patLength];
+            suffix(pattern, patLength, suffix);
+            //模式串中没有子串匹配上好后缀，也找不到一个最大前缀
+            for (i = 0; i < patLength; i++) {
+                bmGs[i] = patLength;
+            }
+            //模式串中没有子串匹配上好后缀，但找到一个最大前缀
+            j = 0;
+            for (i = patLength - 1; i >= 0; i--) {
+                if (suffix[i] == i + 1) {
+                    for (; j < patLength - 1 - i; j++) {
+                        if (bmGs[j] == patLength) {
+                            bmGs[j] = patLength - 1 - i;
+                        }
+                    }
+                }
+            }
+            //模式串中有子串匹配上好后缀
+            for (i = 0; i < patLength - 1; i++) {
+                bmGs[patLength - 1 - suffix[i]] = patLength - 1 - i;
+            }
+        }
+    }
+
+    /**
      * @link: https://www.lintcode.com/problem/number-of-islands-ii/description
      */
     static class Solution434 {
@@ -64,6 +152,82 @@ public class LeetCode {
     }
 
     static class Solution434T2 {
+/*
+        type Pos struct {
+            x int
+            y int
+        }
+
+        type DisjointSet struct {
+            f map[Pos]Pos
+        }
+
+        func (ds *DisjointSet) find(pos Pos) Pos {
+            for ds.f[pos] != pos {
+                pre, ok := ds.f[pos]
+                if !ok {
+                    panic("data not in the disjoint set")
+                }
+                pos = pre
+            }
+            return pos
+        }
+
+        // 返回是不是真的发生了“merge”，如果原本就是联通的，就返回false
+        func (ds *DisjointSet) merge(pos1, pos2 Pos) bool {
+            root1, root2 := ds.find(pos1), ds.find(pos2)
+            if root1 != root2 {
+                ds.f[root1] = root2
+                return true
+            }
+            return false
+        }
+
+        func numIslands2(m int, n int, positions [][]int) []int {
+            ds := DisjointSet{
+                f: make(map[Pos]Pos),
+            }
+
+            offsets := []Pos{Pos{0, 1}, Pos{1, 0}, Pos{0, -1}, Pos{-1, 0}}
+            result := []int{}
+            cur := 0 // 当前岛屿数量
+            for _, p := range positions {
+                pos := Pos{p[0], p[1]}
+
+                // put the new position
+                if _, ok := ds.f[pos]; ok {
+                    //插入了同样的位置，忽略掉
+                    result = append(result, cur)
+                    continue
+                }
+                ds.f[pos] = pos
+                cur++
+
+                for _, o := range offsets {
+                    neighbor := Pos{
+                        x: pos.x + o.x,
+                                y: pos.y + o.y,
+                    }
+
+                    if neighbor.x < 0 || neighbor.x >= m || neighbor.y < 0 || neighbor.y >= n {
+                        continue
+                    }
+
+                    if _, ok := ds.f[neighbor]; ok {
+                        // 如果邻居位置是岛屿，尝试合并
+                        if merged := ds.merge(pos, neighbor); merged {
+                            cur--
+                        }
+                    }
+                }
+
+                result = append(result, cur)
+            }
+
+            return result
+        }
+*/
+
         //(x,y)点的id=y*m+x,记录每个位置的root id
         private int[] islands;
 
@@ -112,6 +276,103 @@ public class LeetCode {
     }
 
     static class Solution1391 {
+        /*
+type DisjointSet struct {
+    pre []int
+}
+
+func NewDisjointSet(n int) *DisjointSet {
+    pre := make([]int, n)
+    for i := 0; i < n; i++ {
+        pre[i] = i
+    }
+    return &DisjointSet{pre}
+}
+
+func (ds *DisjointSet) find(x int) int {
+    for ds.pre[x] != x {
+        x = ds.pre[x]
+    }
+    return x
+}
+
+func (ds *DisjointSet) merge(x, y int) {
+    ds.pre[ds.find(x)] = ds.find(y)
+}
+
+func isAny(x int, nums ...int) bool {
+    for _, n := range nums {
+        if x == n {
+            return true
+        }
+    }
+    return false
+}
+
+func idOf(x, y int) int {
+    return x * 300 + y
+}
+
+
+func tryLeft(ds *DisjointSet, grid [][]int, x, y int) {
+        if y-1 >= 0 && isAny(grid[x][y-1], 1, 4, 6) {
+                ds.merge(idOf(x, y), idOf(x, y-1))
+        }
+}
+
+func tryRight(ds *DisjointSet, grid [][]int, x, y int) {
+        if y+1 < len(grid[0]) && isAny(grid[x][y+1], 1, 3, 5) {
+                ds.merge(idOf(x, y), idOf(x, y+1))
+        }
+}
+
+func tryUp(ds *DisjointSet, grid [][]int, x, y int) {
+        if x-1 >= 0 && isAny(grid[x-1][y], 2, 3, 4) {
+                ds.merge(idOf(x, y), idOf(x-1, y))
+        }
+}
+
+func tryDown(ds *DisjointSet, grid [][]int, x, y int) {
+        if x+1 < len(grid) && isAny(grid[x+1][y], 2, 5, 6) {
+                ds.merge(idOf(x, y), idOf(x+1, y))
+        }
+}
+
+func hasValidPath(grid [][]int) bool {
+    m := len(grid)
+    n := len(grid[0])
+    ds := NewDisjointSet(m * 300 + n + 1)
+
+    for x := 0; x < m; x++ {
+        for y := 0; y < n; y++ {
+            switch grid[x][y] {
+            case 1:
+                tryLeft(ds, grid, x, y)
+                tryRight(ds, grid, x, y)
+            case 2:
+                tryUp(ds, grid, x, y)
+                tryDown(ds, grid, x, y)
+            case 3:
+                tryLeft(ds, grid, x, y)
+                tryDown(ds, grid, x, y)
+            case 4:
+                tryRight(ds, grid, x, y)
+                tryDown(ds, grid, x, y)
+            case 5:
+                tryUp(ds, grid, x, y)
+                tryLeft(ds, grid, x, y)
+            case 6:
+                tryUp(ds, grid, x, y)
+                tryRight(ds, grid, x, y)
+            default:
+                panic("非法的grid值")
+            }
+        }
+    }
+
+    // 只要检查出发点和目标点是不是联通的即可
+    return ds.find(idOf(0, 0)) == ds.find(idOf(m - 1, n - 1))
+}*/
         // 上右下左
         private int[][] directions = {{-1, 0}, {0, 1}, {1, 0}, {0, -1}};
         //0：上 1：右 2：下 3：左
@@ -165,62 +426,6 @@ public class LeetCode {
             return go(x, y, direction);
         }
     }
-
-//    static class Solution1391T2 {
-//        // 上右下左
-//        private int[][] directions = {{-1, 0}, {0, 1}, {1, 0}, {0, -1}};
-//        //0：上 1：右 2：下 3：左
-//        private int[][] streets = {
-//                {1, 3}, {0, 2},
-//                {2, 3}, {1, 2},
-//                {0, 3}, {0, 1}};
-//
-//        //(x,y)点的id=y*m+x,记录每个位置的root id
-//        private int[] isJoin;
-//
-//        private int root(int id) {
-//            while (isJoin[id] != id) {
-//                isJoin[id] = isJoin[isJoin[id]];
-//                id = isJoin[id];
-//            }
-//            return id;
-//        }
-//
-//        public boolean hasValidPath(int[][] grid) {
-//            int m = grid.length;
-//            int n = grid[0].length;
-//            isJoin = new int[m * 300 + n + 1];
-//            Arrays.fill(isJoin, -1);
-//            for (int i = 0; i < m; i++) {
-//                for (int j = 0; j < n; j++) {
-//                    int id = i * 300 + j;
-//                    if (isJoin[id] == -1) {
-//                        isJoin[id] = id;
-//                    }
-//                    int[] street = streets[grid[i][j] - 1];
-//                    for (int st = 0; st < street.length; st++) {
-//                        int ni = i + directions[street[st]][0];
-//                        int nj = j + directions[street[st]][1];
-//                        if (ni < 0 || nj < 0 || ni >= m || nj >= n) {
-//                            continue;
-//                        }
-//                        int nid = ni * 300 + nj;
-//                        if (isJoin[nid] == -1) {
-//                            isJoin[nid] = isJoin[id];
-//                        } else {
-//                            root(nid);
-//                        }
-//                    }
-//                }
-//            }
-//            return isJoin[m * n - 1] == 0;
-//        }
-//
-//        public static void main(String[] args) {
-//            Solution1391T2 solution1391T2 = new Solution1391T2();
-//            solution1391T2.hasValidPath(new int[][]{{2,4,3},{6,5,2}});
-//        }
-//    }
 
     /**
      * @link: https://leetcode-cn.com/problems/design-hashmap/
