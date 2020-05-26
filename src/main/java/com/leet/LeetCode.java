@@ -8,6 +8,89 @@ import java.util.function.IntConsumer;
 public class LeetCode {
 
     /**
+     * @link: https://leetcode-cn.com/problems/decode-string/
+     */
+    static class Solution394 {
+        public String decodeString(String s) {
+            return dfs(s.toCharArray(),0);
+        }
+
+        private String dfs(char[] c, int i) {
+            StringBuilder cur = new StringBuilder();
+            int swell = 0;
+            while (i < c.length) {
+                char nowC = c[i];
+                if (nowC == '-') {
+                    i++;
+                    continue;
+                }
+                c[i] = '-';
+                if (nowC >= '0' && nowC <= '9') {
+                    swell = swell * 10 + (nowC - '0');
+                } else if (nowC == '[') {
+                    String dfs = dfs(c, i + 1);
+                    while (swell > 0) {
+                        cur.append(dfs);
+                        swell--;
+                    }
+                } else if (nowC == ']') {
+                    break;
+                } else {
+                    cur.append(nowC);
+                }
+                i++;
+            }
+            return cur.toString();
+        }
+    }
+
+    /**
+     * @link: https://leetcode-cn.com/problems/regular-expression-matching/
+     */
+    static class Solution10 {
+
+        /*
+        func isMatch(s string, p string) bool {
+            m, n := len(s), len(p)
+            dp := make([][]bool, m + 1)
+            for i := 0; i <= m; i++ {
+                dp[i] = make([]bool, n + 1)
+            }
+
+            dp[m][n] = true
+
+            // 只能倒着来，因为a*这种pattern，先得找到*，再找到a，才能正确
+            for i := m; i >= 0; i-- { // 留意从m开始，因为字符串是""也有可能匹配
+                for j := n - 1; j >= 0; j-- {
+                    curMatched := i < m && (s[i] == p[j] || p[j] == '.')
+                    if j < n - 1 && p[j + 1] == '*' {
+                        dp[i][j] = dp[i][j + 2] || (curMatched && dp[i + 1][j])
+                    } else {
+                        dp[i][j] = curMatched && dp[i+1][j+1]
+                    }
+                }
+            }
+
+            return dp[0][0]
+        }*/
+
+        public boolean isMatch(String s, String p) {
+            if (s == null || p == null) {
+                return false;
+            }
+            if (p.isEmpty()) {
+                return s.isEmpty();
+            }
+            boolean first = s.length() > 0 && (p.charAt(0) == s.charAt(0) || p.charAt(0) == '.');
+            if (p.length() >= 2 && p.charAt(1) == '*') {
+                return (first && isMatch(s.substring(1), p)) || isMatch(s, p.substring(2));
+            } else {
+                return first && isMatch(s.substring(1), p.substring(1));
+            }
+        }
+    }
+
+    /**
      * @link: https://leetcode-cn.com/problems/implement-strstr/
      */
     static class Solution28 {
