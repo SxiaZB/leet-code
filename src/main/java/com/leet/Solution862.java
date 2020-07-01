@@ -14,6 +14,9 @@ public class Solution862 {
             int sum = A[i];
             int j = i + 1;
             for (; j < A.length; j++) {
+                if (sum <= 0 || (res != -1 && (j - i + 1) >= res)) {
+                    break;
+                }
                 sum += A[j];
                 if (sum >= K) {
                     break;
